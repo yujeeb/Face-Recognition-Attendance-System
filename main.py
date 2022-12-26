@@ -6,8 +6,8 @@ from PIL import Image,ImageTk
 class Face_Recognition_System:
     def __init__(self,root):
         self.root=root
-        self.root.geometry("1530x790+0+0")
-        self.root.title("face Recognition System")
+        self.root.geometry("1366x768+0+0")
+        self.root.title("Face Recognition System")
 
 
         title_lbl=Label(text="FACE RECOGNITION ATTENDANCE SYSTEM SOFTWARE",font=("times new roman",35,"bold"),bg="white",fg="red")
