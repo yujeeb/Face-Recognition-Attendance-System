@@ -148,9 +148,10 @@ class Student:
         radiobtn1 = ttk.Radiobutton(class_student_frame, variable=self.var_radio1, text="Take a Photo Sample", value="Yes")
         radiobtn1.grid(row=7, column=0, padx=10, pady=2, sticky=W)
 
-        # self.var_radio2=StringVar()
         radiobtn2 = ttk.Radiobutton(class_student_frame, variable=self.var_radio1, text="No Photo Sample", value="No")
         radiobtn2.grid(row=7, column=1, padx=10, pady=2, sticky=W)
+
+
 
         # Buttons frame
         btn_frame = Frame(class_student_frame, bd=2, bg="white", relief=RIDGE)
@@ -171,7 +172,7 @@ class Student:
         take_photo_btn = Button(btn_frame, text="Take Photo Sample", command=self.generate_dataset, width=18, font=("times new roman", 12, "bold"), bg="blue", fg="white")
         take_photo_btn.grid(row=4, column=0, padx=1)
 
-        update_photo_btn = Button(btn_frame, text="Update Photo Sample", width=18, font=("times new roman", 12, "bold"), bg="green", fg="white")
+        update_photo_btn = Button(btn_frame, text="Upload Photo Sample", command=self.upload_photo, width=18, font=("times new roman", 12, "bold"), bg="green", fg="white")
         update_photo_btn.grid(row=4, column=1, padx=1)
 
         # right label frame
@@ -239,11 +240,22 @@ class Student:
             for key, attributes in student_info.items():
                 print(key)
                 print(attributes)
-                student_value = (attributes['Roll Number'], attributes['Student Name'], attributes['Department'],
-                                 attributes['Year'], attributes['Semester'], attributes['Gender'],
-                                 attributes['Date of Birth'], attributes['Email'], attributes['Address'],
-                                 attributes['Phone Number'], attributes['Photo Sample'])
-                self.student_table.insert("", END, values=student_value)
+                try:
+                    student_value = (attributes['Roll Number'] if "Roll Number" in attributes else "None Provided",
+                                     attributes['Student Name'] if "Student Name" in attributes else "None Provided",
+                                     attributes['Department'] if "Department" in attributes else "None Provided",
+                                     attributes['Year'] if "Year" in attributes else "None Provided",
+                                     attributes['Semester'] if "Semester" in attributes else "None Provided",
+                                     attributes['Gender'] if "Gender" in attributes else "None Provided",
+                                     attributes['Date of Birth'] if "Date of Birth" in attributes else "None Provided",
+                                     attributes['Email'] if "Email" in attributes else "None Provided",
+                                     attributes['Address'] if "Address" in attributes else "None Provided",
+                                     attributes['Phone Number'] if "Phone Number" in attributes else "None Provided",
+                                     attributes['Photo Sample'] if "Photo Sample" in attributes else "None Provided")
+
+                    self.student_table.insert("", END, values=student_value)
+                except Exception as es:
+                    print(es)
         except Exception as es:
             print(es)
 
@@ -266,9 +278,14 @@ class Student:
         self.var_radio1.set(student_table_data[10])
 
     # ================Function Description=====================
+    def proceed(self):
+        if self.var_rollNo.get() == "" or self.var_stName.get() == "" or self.var_dep.get() == "Select Department" or self.var_year.get() == "Select Year" or self.var_sem.get() == "Select Semester" or self.var_gender.get() == "Gender" or self.var_dob.get() == "" or self.var_email.get() == "" or self.var_address.get() == "" or self.var_phoneNo.get() == "" or self.var_radio1.get() == "":
+            return True
+        else:
+            return False
 
     def add_data(self):
-        if self.var_dep.get() == "Select Department" or self.var_stName.get() == "" or self.var_rollNo.get() == "":
+        if self.proceed():
             messagebox.showerror("ERROR", "Fill all the fields", parent=self.root)
         else:
             try:
@@ -311,8 +328,8 @@ class Student:
         # ===============update data=================
 
     def update_data(self):
-        if self.var_dep.get() == "Select Department" or self.var_stName.get() == "" or self.var_rollNo.get() == "":
-            messagebox.showerror("ERROR", "Fill all the fields", parent=self.root)
+        if self.proceed():
+            messagebox.showerror("ERROR", 'Fill all fields. \nFill "NA" for fields with unknown values.', parent=self.root)
         else:
             try:
                 update = messagebox.askyesno("Update", "Are you sure to update these details?", parent=self.root)
@@ -389,7 +406,7 @@ class Student:
     # =========================generate data set or take photo samples===================
 
     def generate_dataset(self):
-        if self.var_dep.get() == "Select Department" or self.var_stName.get() == "" or self.var_rollNo.get() == "":
+        if self.proceed():
             messagebox.showerror("ERROR", "Fill all the fields", parent=self.root)
         else:
             try:
@@ -412,11 +429,11 @@ class Student:
                 cap = cv2.VideoCapture(0)
                 img_id = 0
 
-                # try:
-                #     # os.chdir("E:\Yujeeb Abbas Kashani\CMRCET\Semester 03\SIP LAB\Face-Recognition-Attendance-System\Face-Recognition-Attendance-System\dataset")
-                #     # os.mkdir(f"{roll}")
-                # except Exception as es:
-                #     pass
+                try:
+                    os.chdir("dataset")
+                    os.mkdir(f"{roll}")
+                except Exception as es:
+                    pass
 
                 while True:
                     ret, my_frame = cap.read()
@@ -440,16 +457,6 @@ class Student:
                 cap.release()
                 cv2.destroyAllWindows()
                 ref.update(value={self.var_rollNo.get().upper(): {
-                    "Department": self.var_dep.get(),
-                    "Year": self.var_year.get(),
-                    "Semester": self.var_sem.get(),
-                    "Roll Number": self.var_rollNo.get(),
-                    "Student Name": self.var_stName.get(),
-                    "Gender": self.var_gender.get(),
-                    "Date of Birth": self.var_dob.get(),
-                    "Email": self.var_email.get(),
-                    "Address": self.var_address.get(),
-                    "Phone Number": self.var_phoneNo.get(),
                     "Photo Sample": "Yes"
                 }})
                 self.student_table.item(self.student_table.focus(), text="", values=(
@@ -463,14 +470,59 @@ class Student:
                     self.var_email.get(),
                     self.var_address.get(),
                     self.var_phoneNo.get(),
-                    "Yes"
+                    db.reference(f'Students/{roll}/Photo Sample').get()
                 ))
 
-                filename = f"E:/Yujeeb Abbas Kashani/CMRCET/Semester 03/SIP LAB/Face-Recognition-Attendance-System/Face-Recognition-Attendance-System/dataset/{str(roll)}"
-                bucket = storage.bucket()
-                blob = bucket.blob(filename)
-                blob.upload_from_filename(filename)
-                messagebox.showinfo("Result", "Generating dataset completed successfully.")
+
+
+        # folderPath = f'{str(roll)}'
+        # pathList = os.listdir(folderPath)
+        # print(pathList)
+        # imgList = []
+        # studentIds = []
+
+                # folderRoll = str(roll)
+                # for folderRoll in pathList:
+        # for path in pathList:
+        #     imgList.append(cv2.imread(os.path.join(folderPath, path)))
+        #     studentIds.append(os.path.splitext(path)[0])
+        #
+        #     fileName = f'{folderPath}/{path}'
+        #     bucket = storage.bucket()
+        #     blob = bucket.blob(fileName)
+        #     blob.upload_from_filename(fileName)
+                # bucket = storage.bucket()
+                # blob = bucket.blob(filename)
+                # blob.upload_from_filename(filename)
+                # messagebox.showinfo("Result", "Generating dataset completed successfully.")
+            except Exception as es:
+                messagebox.showerror("Error", f"Due to:{str(es)}", parent=self.root)
+
+    def upload_photo(self):
+        if self.proceed():
+            messagebox.showerror("ERROR", "Fill all the fields", parent=self.root)
+        else:
+            try:
+                cursor_focus = self.student_table.focus()
+                content = self.student_table.item(cursor_focus)
+                student_table_data = content["values"]
+                roll = student_table_data[0]
+
+                folderPath = 'Dataset'
+                pathList = os.listdir(folderPath)
+                print(pathList)
+                imgList = []
+                studentIds = []
+
+                for path in pathList:
+                    imgList.append(cv2.imread(os.path.join(folderPath, path)))
+                    studentIds.append(os.path.splitext(path)[0])
+
+                    fileName = f'{folderPath}/{path}'
+                    bucket = storage.bucket()
+                    blob = bucket.blob(fileName)
+                    blob.upload_from_filename(fileName)
+
             except Exception as es:
                 messagebox.showerror("Error", f"Due to:{str(es)}", parent=self.root)
 

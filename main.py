@@ -3,7 +3,7 @@ from tkinter import *
 from tkinter import ttk
 from PIL import Image, ImageTk
 from student import Student
-# import customtkinter
+import customtkinter
 from train import Train
 from face_recognition import Face_Recognition
 

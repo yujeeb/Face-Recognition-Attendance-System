@@ -22,12 +22,13 @@ class Train:
         b1_1.place(x=0,y=380,width=1530,height=60)
 
     def train_classifier(self):
-        data_dir=("dataset")
+        data_dir=("Dataset")
         path=[os.path.join(data_dir,file) for file in os.listdir(data_dir)]
 
         faces=[]
         ids=[]
-        
+
+
         for image in path:
             img=Image.open(image).convert('L') # gray scale image
             imageNP=np.array(img,'uint8')
