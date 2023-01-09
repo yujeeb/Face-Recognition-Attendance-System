@@ -32,7 +32,7 @@ class Train:
         for image in path:
             img=Image.open(image).convert('L') # gray scale image
             imageNP=np.array(img,'uint8')
-            id=os.path.split(image)[1].split('.')[1]
+            id=int(os.path.split(image)[1].split('.')[1])
 
             faces.append(imageNP)
             ids.append(id)
@@ -47,3 +47,8 @@ class Train:
         cv2.destroyAllWindows()
         messagebox.showinfo("result","Training datasets completed!!")
         
+
+if __name__ == "__main__":
+    root=Tk()
+    obj=Train(root)
+    root.mainloop()

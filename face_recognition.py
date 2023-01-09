@@ -1,11 +1,15 @@
 from tkinter import*
-from tkinter import ttk
-from PIL import Image,ImageTk
-from tkinter import messagebox
-
 import cv2
-import os
-import numpy as np
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import db
+
+
+# cred = credentials.Certificate("serviceAccountKey.json")
+# firebase_admin.initialize_app(cred, {
+#     'databaseURL': "https://instantattendance-fa6e1-default-rtdb.firebaseio.com/",
+#     'storageBucket': "instantattendance-fa6e1.appspot.com"
+# })
 
 
 class Face_Recognition:
@@ -17,7 +21,7 @@ class Face_Recognition:
         title_lbl=Label(self.root,text="FACE RECOGNITION",font=("times new roman",35,"bold"),bg="white",fg="red")
         title_lbl.place(x=0,y=0,width=1530,height=45)
 
-        b1_1=Button(self.root,text="FACE RECOGNITION", command=self.face_recog,cursor="hand2",font=("times new roman",18,"bold"),bg="red",fg="white")
+        b1_1=Button(self.root,text="FACE RECOGNITION",command = self.face_recog,cursor="hand2",font=("times new roman",18,"bold"),bg="red",fg="white")
         b1_1.place(x=350,y=600,width=200,height=40)
 
         # ---------------------FACE -------------------#
@@ -25,13 +29,13 @@ class Face_Recognition:
     def face_recog(self):
         def draw_boundary(img,classifier,scaleFactor,minNeighbors,color,text,clf):
             gray_image=cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-            features=classifier.detectMutliScale(gray_image,scaleFactor,minNeighbors)
+            features=classifier.detectMultiScale(gray_image,scaleFactor,minNeighbors)
             
             coord=[]
 
             for (x,y,w,h) in features:
-                cv2.rectangle(img(x,y),(x+w,y+h),(0,255,0),3)
-                id,predict=clf.predict(gray_image[y:y+h,x:x+w])
+                cv2.rectangle(img,(x,y),(x+w,y+h),(0,255,0),3)
+                fid,predict=clf.predict(gray_image[y:y+h,x:x+w])
                 confidence=int((100*(1-predict/300)))
                 
                 # conn=mysql.connector.connect(host="localhost",username="root",password="Test@123",database="face_recognizer")
@@ -49,13 +53,17 @@ class Face_Recognition:
                 # d=my_cursor.fetchone()
                 # d="+".join(d)
 
-                if confidence>77:
-                    # cv2.putText(img,f"Roll:{r}",(x,y-55),cv2.FONT_HERSHEY_COMPLEX,0.8,(255,255,255),3)
-                    # cv2.putText(img,f"name:{n}",(x,y-30),cv2.FONT_HERSHEY_COMPLEX,0.8,(255,255,255),3)
-                    # cv2.putText(img,f"Department:{d}",(x,y-5),cv2.FONT_HERSHEY_COMPLEX,0.8,(255,255,255),3)
-                    cv2.putText(img, f"Face in DB", (x, y - 5), cv2.FONT_HERSHEY_COMPLEX, 0.8, (255, 255, 255), 3)
+                n = db.reference(f'Students/{fid}/Student Name').get()
+                r = db.reference(f'Students/{fid}/Roll Number').get()
+                d = db.reference(f'Students/{fid}/Department').get()
+
+                if confidence > 77:
+                    cv2.putText(img, f"Roll:{r}", (x, y-55), cv2.FONT_HERSHEY_COMPLEX, 0.8, (255, 255, 255), 3)
+                    cv2.putText(img, f"name:{n}", (x, y-30), cv2.FONT_HERSHEY_COMPLEX, 0.8, (255, 255, 255), 3)
+                    cv2.putText(img, f"Department:{d}", (x, y-5), cv2.FONT_HERSHEY_COMPLEX, 0.8, (255, 255, 255), 3)
+                    # cv2.putText(img, f"Face in DB", (x, y - 5), cv2.FONT_HERSHEY_COMPLEX, 0.8, (255, 255, 255), 3)
                 else:
-                    cv2.rectangle(img(x,y),(x+w,y+h),(0,0,255),3)
+                    cv2.rectangle(img,(x,y),(x+w,y+h),(0,0,255),3)
                     cv2.putText(img,f"Unknown face",(x,y-5),cv2.FONT_HERSHEY_COMPLEX,0.8,(255,255,255),3)
                 
                 coord=[x,y,w,y]
@@ -75,20 +83,13 @@ class Face_Recognition:
         while True:
             ret,img=video_cap.read()
             img=recognize(img,clf,faceCascade)
-            cv2.imshow=("welcome to face recognition",img)
+            cv2.imshow("welcome to face recognition",img)
 
-            if cv2.waitkey(1)==13:
+            if cv2.waitKey(1)==13:
                 break
-            video_cap.release()
-            cv2.destroyAllWindows()
+        video_cap.release()
+        cv2.destroyAllWindows()
 
-
-
-
-
-
-
-        
 
 if __name__ == "__main__":
     root=Tk()

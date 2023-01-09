@@ -206,7 +206,7 @@ class Student:
         scroll_x = ttk.Scrollbar(table_frame, orient=HORIZONTAL)
         scroll_y = ttk.Scrollbar(table_frame, orient=VERTICAL)
 
-        self.student_table = ttk.Treeview(table_frame,column=("rollNo", "stName", "dep", "year", "sem", "gender", "dob","email", "address", "phoneNo", "photoSample"),xscrollcommand=scroll_x.set, yscrollcommand=scroll_y.set)
+        self.student_table = ttk.Treeview(table_frame,column=("rollNo", "stName", "dep", "year", "sem", "gender", "dob","email", "address", "phoneNo", "photoSample","refID"),xscrollcommand=scroll_x.set, yscrollcommand=scroll_y.set)
 
         scroll_x.pack(side=BOTTOM, fill=X)
         scroll_y.pack(side=RIGHT, fill=Y)
@@ -224,6 +224,7 @@ class Student:
         self.student_table.heading("address", text="Address")
         self.student_table.heading("phoneNo", text="Phone Number")
         self.student_table.heading("photoSample", text="Photo Sample")
+        self.student_table.heading("refID", text="Reference ID")
         self.student_table["show"] = "headings"
 
         self.student_table.pack(fill=BOTH, expand=1)
@@ -234,24 +235,31 @@ class Student:
 
     def fetch_data(self):
         try:
-            student_info = db.reference(f'Students/{self.var_rollNo.get()}').get()
+            cursor_focus = self.student_table.focus()
+            content = self.student_table.item(cursor_focus)
+            student_table_data = content["values"]
+            # ref_id = student_table_data[11]
+
+            student_info = db.reference('Students/').get()
             print(student_info)
+            student_info = student_info[1:]
             student_value = ()
-            for key, attributes in student_info.items():
-                print(key)
-                print(attributes)
+            for dicts in student_info:
+                # print(key)
+                # print(attributes)
                 try:
-                    student_value = (attributes['Roll Number'] if "Roll Number" in attributes else "None Provided",
-                                     attributes['Student Name'] if "Student Name" in attributes else "None Provided",
-                                     attributes['Department'] if "Department" in attributes else "None Provided",
-                                     attributes['Year'] if "Year" in attributes else "None Provided",
-                                     attributes['Semester'] if "Semester" in attributes else "None Provided",
-                                     attributes['Gender'] if "Gender" in attributes else "None Provided",
-                                     attributes['Date of Birth'] if "Date of Birth" in attributes else "None Provided",
-                                     attributes['Email'] if "Email" in attributes else "None Provided",
-                                     attributes['Address'] if "Address" in attributes else "None Provided",
-                                     attributes['Phone Number'] if "Phone Number" in attributes else "None Provided",
-                                     attributes['Photo Sample'] if "Photo Sample" in attributes else "None Provided")
+                    student_value = (dicts['Roll Number'] if "Roll Number" in dicts else "None Provided",
+                                     dicts['Student Name'] if "Student Name" in dicts else "None Provided",
+                                     dicts['Department'] if "Department" in dicts else "None Provided",
+                                     dicts['Year'] if "Year" in dicts else "None Provided",
+                                     dicts['Semester'] if "Semester" in dicts else "None Provided",
+                                     dicts['Gender'] if "Gender" in dicts else "None Provided",
+                                     dicts['Date of Birth'] if "Date of Birth" in dicts else "None Provided",
+                                     dicts['Email'] if "Email" in dicts else "None Provided",
+                                     dicts['Address'] if "Address" in dicts else "None Provided",
+                                     dicts['Phone Number'] if "Phone Number" in dicts else "None Provided",
+                                     dicts['Photo Sample'] if "Photo Sample" in dicts else "None Provided",
+                                     dicts['Reference ID'] if "Reference ID" in dicts else "None Provided")
 
                     self.student_table.insert("", END, values=student_value)
                 except Exception as es:
@@ -289,8 +297,10 @@ class Student:
             messagebox.showerror("ERROR", "Fill all the fields", parent=self.root)
         else:
             try:
+                student_id = db.reference('ref_count').get()
+                student_id += 1
                 data = {
-                    self.var_rollNo.get().upper():
+                    str(student_id):
                         {
                             "Department": self.var_dep.get(),
                             "Year": self.var_year.get(),
@@ -302,7 +312,8 @@ class Student:
                             "Email": self.var_email.get(),
                             "Address": self.var_address.get(),
                             "Phone Number": self.var_phoneNo.get(),
-                            "Photo Sample": self.var_radio1.get()
+                            "Photo Sample": self.var_radio1.get(),
+                            "Reference ID": str(student_id)
                     }
                 }
                 self.student_table.insert(parent="", index='end', values=(
@@ -316,10 +327,13 @@ class Student:
                     self.var_email.get(),
                     self.var_address.get(),
                     self.var_phoneNo.get(),
-                    self.var_radio1.get()
+                    self.var_radio1.get(),
+                    student_id
                 ))
                 for key, value in data.items():
                     ref.child(key).set(value)
+
+                db.reference("ref_count").set(student_id)
 
                 messagebox.showinfo("Success", "Student details have been added successfully", parent=self.root)
             except Exception as es:
@@ -334,7 +348,12 @@ class Student:
             try:
                 update = messagebox.askyesno("Update", "Are you sure to update these details?", parent=self.root)
                 if update > 0:
-                    ref.update(value={self.var_rollNo.get().upper(): {
+                    cursor_focus = self.student_table.focus()
+                    content = self.student_table.item(cursor_focus)
+                    student_table_data = content["values"]
+                    ref_id = student_table_data[11]
+
+                    ref.update(value={ref_id: {
                         "Department": self.var_dep.get(),
                         "Year": self.var_year.get(),
                         "Semester": self.var_sem.get(),
@@ -345,20 +364,22 @@ class Student:
                         "Email": self.var_email.get(),
                         "Address": self.var_address.get(),
                         "Phone Number": self.var_phoneNo.get(),
-                        "Photo Sample": self.var_radio1.get()
+                        "Photo Sample": self.var_radio1.get(),
+                        "Reference ID": ref_id
                     }})
                     self.student_table.item(self.student_table.focus(), text="", values=(
-                        self.var_rollNo.get(),
-                        self.var_stName.get(),
-                        self.var_dep.get(),
-                        self.var_year.get(),
-                        self.var_sem.get(),
-                        self.var_gender.get(),
-                        self.var_dob.get(),
-                        self.var_email.get(),
-                        self.var_address.get(),
-                        self.var_phoneNo.get(),
-                        self.var_radio1.get()
+                        db.reference(f'Students/{ref_id}/Roll Number').get(),
+                        db.reference(f'Students/{ref_id}/Student Name').get(),
+                        db.reference(f'Students/{ref_id}/Department').get(),
+                        db.reference(f'Students/{ref_id}/Year').get(),
+                        db.reference(f'Students/{ref_id}/Semester').get(),
+                        db.reference(f'Students/{ref_id}/Gender').get(),
+                        db.reference(f'Students/{ref_id}/Date of Birth').get(),
+                        db.reference(f'Students/{ref_id}/Email').get(),
+                        db.reference(f'Students/{ref_id}/Address').get(),
+                        db.reference(f'Students/{ref_id}/Phone Number').get(),
+                        db.reference(f'Students/{ref_id}/Photo Sample').get(),
+                        db.reference(f'Students/{ref_id}/Reference ID').get()
                     ))
                 else:
                     if not update:
@@ -375,11 +396,17 @@ class Student:
             messagebox.showerror("Error", "Roll Number is required", parent=self.root)
         else:
             try:
+                cursor_focus = self.student_table.focus()
+                content = self.student_table.item(cursor_focus)
+                student_table_data = content["values"]
+                ref_id = student_table_data[11]
+                student_info = ref.get()[1:]
                 delete = messagebox.askyesno("Confirmation", "Do you want to delete this student's details?", parent=self.root)
                 if delete > 0:
-                    for k, v in ref.get().items():
-                        if v['Roll Number'] == self.var_rollNo.get():
-                            db.reference('Students').child(k).delete()
+                        # for dicts in student_info:
+                        # for k, v in dicts.items():
+                        # if dicts['Reference ID'] == int(ref_id):
+                    db.reference('Students').child(str(ref_id)).delete()
                 else:
                     if not delete:
                         return
@@ -415,7 +442,7 @@ class Student:
                 cursor_focus = self.student_table.focus()
                 content = self.student_table.item(cursor_focus)
                 student_table_data = content["values"]
-                roll = student_table_data[0]
+                refID = student_table_data[11]
 
                 def face_cropped(img):
                     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -429,11 +456,11 @@ class Student:
                 cap = cv2.VideoCapture(0)
                 img_id = 0
 
-                try:
-                    os.chdir("dataset")
-                    os.mkdir(f"{roll}")
-                except Exception as es:
-                    pass
+                # try:
+                #     os.chdir("dataset")
+                #     os.mkdir(f"{roll}")
+                # except Exception as es:
+                #     pass
 
                 while True:
                     ret, my_frame = cap.read()
@@ -441,8 +468,8 @@ class Student:
                         img_id += 1
                         face = cv2.resize(face_cropped(my_frame), (450, 450))
                         face = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
-                        # dataset_path = r"\Yujeeb Abbas Kashani\CMRCET\Semester 03\SIP LAB\Face-Recognition-Attendance-System\Face-Recognition-Attendance-System\dataset/" + str(roll) + "/user." + str(roll) + "." + str(img_id) + ".jpg"
-                        dataset_path = r"\Yujeeb Abbas Kashani\CMRCET\Semester 03\SIP LAB\Face-Recognition-Attendance-System\Face-Recognition-Attendance-System\dataset/user." + str(roll) + "." + str(img_id) + ".jpg"
+
+                        dataset_path = r"dataset/user." + str(refID) + "." + str(img_id) + ".jpg"
                         cv2.imwrite(dataset_path, face)
                         cv2.putText(face, str(img_id), (50, 50),cv2.FONT_HERSHEY_COMPLEX, 2, (0, 255, 0), 2)
                         cv2.imshow("Collecting data", face)
@@ -456,21 +483,33 @@ class Student:
 
                 cap.release()
                 cv2.destroyAllWindows()
-                ref.update(value={self.var_rollNo.get().upper(): {
-                    "Photo Sample": "Yes"
+                ref.update(value={refID: {
+                    "Department": self.var_dep.get(),
+                    "Year": self.var_year.get(),
+                    "Semester": self.var_sem.get(),
+                    "Roll Number": self.var_rollNo.get(),
+                    "Student Name": self.var_stName.get(),
+                    "Gender": self.var_gender.get(),
+                    "Date of Birth": self.var_dob.get(),
+                    "Email": self.var_email.get(),
+                    "Address": self.var_address.get(),
+                    "Phone Number": self.var_phoneNo.get(),
+                    "Photo Sample": "Yes",
+                    "Reference ID": refID
                 }})
                 self.student_table.item(self.student_table.focus(), text="", values=(
-                    self.var_rollNo.get(),
-                    self.var_stName.get(),
-                    self.var_dep.get(),
-                    self.var_year.get(),
-                    self.var_sem.get(),
-                    self.var_gender.get(),
-                    self.var_dob.get(),
-                    self.var_email.get(),
-                    self.var_address.get(),
-                    self.var_phoneNo.get(),
-                    db.reference(f'Students/{roll}/Photo Sample').get()
+                    db.reference(f'Students/{refID}/Roll Number').get(),
+                    db.reference(f'Students/{refID}/Student Name').get(),
+                    db.reference(f'Students/{refID}/Department').get(),
+                    db.reference(f'Students/{refID}/Year').get(),
+                    db.reference(f'Students/{refID}/Semester').get(),
+                    db.reference(f'Students/{refID}/Gender').get(),
+                    db.reference(f'Students/{refID}/Date of Birth').get(),
+                    db.reference(f'Students/{refID}/Email').get(),
+                    db.reference(f'Students/{refID}/Address').get(),
+                    db.reference(f'Students/{refID}/Phone Number').get(),
+                    db.reference(f'Students/{refID}/Photo Sample').get(),
+                    db.reference(f'Students/{refID}/Reference ID').get()
                 ))
 
 
@@ -503,11 +542,6 @@ class Student:
             messagebox.showerror("ERROR", "Fill all the fields", parent=self.root)
         else:
             try:
-                cursor_focus = self.student_table.focus()
-                content = self.student_table.item(cursor_focus)
-                student_table_data = content["values"]
-                roll = student_table_data[0]
-
                 folderPath = 'Dataset'
                 pathList = os.listdir(folderPath)
                 print(pathList)

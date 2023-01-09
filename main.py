@@ -3,7 +3,7 @@ from tkinter import *
 from tkinter import ttk
 from PIL import Image, ImageTk
 from student import Student
-import customtkinter
+# import customtkinter
 from train import Train
 from face_recognition import Face_Recognition
 
@@ -21,7 +21,7 @@ class Face_Recognition_System:
         b1_1.place(x=100, y=300, width=220, height=40)
 
         # FACE DETECTOR
-        b1_1 = Button(text="FACE DETECTOR", command=self.face_data,cursor="hand2", font=("times new roman", 15, "bold"), bg="blue", fg="white")
+        b1_1 = Button(text="FACE DETECTOR", command=self.face_recognition,cursor="hand2", font=("times new roman", 15, "bold"), bg="blue", fg="white")
         b1_1.place(x=400, y=300, width=220, height=40)
 
         # ATTENDANCE
@@ -49,7 +49,7 @@ class Face_Recognition_System:
         b1_1.place(x=1000, y=500, width=220, height=40)
 
     # def open_img(self):
-        # os.startfile()
+    #     os.startfile("Dataset")
     # ====================Functions Buttons=======================
 
     def student_details(self):
@@ -57,13 +57,17 @@ class Face_Recognition_System:
         self.app = Student(self.new_window)
 
     def train_data(self):
-        self.new_window = Toplevel(self.root)
-        self.app = Train(self.new_window)
+        # self.new_window = Toplevel(self.root)
+        # self.app = Train(self.new_window)
+        self.app = Train.train_classifier(self.root)
 
-    def face_data(self):
-        self.new_window = Toplevel(self.root)
-        self.app = Face_Recognition(self.new_window)
+    # def face_data(self):
+    #     self.new_window = Toplevel(self.root)
+    #     self.app = Face_Recognition(self.new_window)
 
+    def face_recognition(self):
+        self.app=Face_Recognition.face_recog(self.root)
+    #
 
 
 if __name__ == "__main__":
